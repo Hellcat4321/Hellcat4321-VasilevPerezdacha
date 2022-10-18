@@ -1,0 +1,31 @@
+{% extends "./layout.peb" %}
+
+{% block content %}
+
+<div class="grid-x grid-padding-x">
+    <div class="cell">
+        <h1>Информация об оборудовании</h1>
+
+        <p>
+            <a href="/equipment">Назад к списку</a>
+        </p>
+        <p>
+            Название: {{ model.equipment.name }}
+        </p>
+        <p>
+            Номер: {{ model.equipment.productId }}
+        </p>
+        <p>
+            Описание
+        </p>
+        <p>
+            {{ model.equipment.description }}
+        </p>
+        <p>
+            Дата приёма: {{ model.equipment.submissionDate }}
+        </p>
+    </div>
+</div>
+
+{% endblock %}
+

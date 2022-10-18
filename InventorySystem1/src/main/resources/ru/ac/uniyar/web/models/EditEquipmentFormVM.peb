@@ -1,0 +1,43 @@
+{% extends "./layout.peb" %}
+
+{% block content %}
+    {% if model.form.errors is not empty %}
+        <div class="grid-x grid-padding-x">
+            <div class="medium-12 cell warning">
+                <ul>
+                    {% for error in model.form.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+     <div class="secondary callout">
+            <form method="POST">
+                <div class="grid-x grid-padding-x">
+                    <div class="medium-6 cell">
+                        <p>Название: <input name="name" type="text" value="{{model.form.fields["name"] | first}}"></p>
+                    </div>
+                    <div class="medium-6 cell">
+                        <p>Номер: <input name="productId" type="text" value="{{model.form.fields["productId"] | first}}"></p>
+                    </div>
+                    <div class="medium-12 cell">
+                        <p>Описание: <input name="description" type="text" value="{{model.form.fields["description"] | first}}"></p>
+                    </div>
+                    <div class="medium-12 cell">
+                        <label>Дата приёма:<input name="submissionDate" type="date" value="{{model.form.fields["submissionDate"] | first}}"></label>
+                    </div>
+
+                </div>
+
+                <div class="grid-x grid-padding-x">
+                    <div class="medium-6 cell">
+                        <input type="submit" value="Подтвердить" class="button">
+                    </div>
+                    <div class="medium-6 cell">
+                        <p><a href="/equipment/{{model.id}}" class="button">Назад</a></p>
+                    </div>
+                </div>
+            </form>
+    </div>
+{% endblock %}

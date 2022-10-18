@@ -1,0 +1,229 @@
+Подключить Jwt:
+1) в build.gradle добавить в dependencies 
+		implementation "com.auth0:java-jwt:${auth0Version}"
+2) в gradle.properties добавить auth0Version=3.19.1
+
+3) Reload All Gradle Projects
+
+4) Добавить классы
+(полный копи-паст из работающего проекта)
+1. JwtTools
+2. PasswordHasher.kt
+3. class Checksum
+4. class Settings
+5. LoginHandler.kt
+6. class LoginFormVM
+7. LoginFormVM.peb
+8. settings.json
+
+4.1) Частичный копи-паст из работающего проекта(Изменить нужные переменные)
+1. class AuthenticateUserViaLoginQuery
+2. PermissionQueries
+3. AuthenticationFilter.kt
+4. AuthorizationFilter.kt
+
+5)Создать 
+1. data class RolePermissions 
+2. class RolePermissionsRepository
+3. AccessErrorVM
+4. AccessErrorVM.peb
+
+6) Добавить в
+
+1. class OperationStorage
+	1. settingsPath: Path
+	2. val settings = Settings(settingsPath)
+	3. val authenticateUserViaLoginQuery = AuthenticateUserViaLoginQuery(
+        storage.employeeRepository,
+        settings)
+	4. val fetchPermissionsViaIdQuery = FetchPermissionsViaIdQuery(storage.rolePermissionsRepository)
+    	5. val fetchEmployeeViaUserId = FetchEmployeeViaUserId(storage.employeeRepository)
+
+2. data class Employee
+	1. val roleId: UUID
+	2. val password: String
+	3. fun setUuid(uuid: UUID) : Employee {
+        	return this.copy(id = uuid) }
+
+3. ShowErrorMessageFilter.kt
+	1. const val UNAUTHORISED_CODE = 401
+	2. else if(response.status.code == UNAUTHORISED_CODE) {
+            response.with(htmlView(request) of AccessErrorVM("")) }
+
+3. class HandlerStorage
+	1. permissionsLens: RequestContextLens<RolePermissions?>
+	2. jwtTools: JwtTools
+	3. val showLoginFormHandler = ShowLoginFormHandler(htmlView)
+    	4. val authenticateUser = AuthenticateUser(
+        	operationStorage.authenticateUserViaLoginQuery,
+        	htmlView,
+        	jwtTools,)
+	5. permissionsLens во все Handler где надо
+
+4. class ShowEmployeeHandler
+	1. private val permissionsLens: RequestContextLens<RolePermissions?>
+	2. val permissions = permissionsLens(request)
+           if (!permissions!!.watchEmployee)
+            return Response(Status.UNAUTHORIZED)
+
+5. class ShowEmployeesHandler
+	1. private val permissionsLens: RequestContextLens<RolePermissions?>
+	2. val permissions = permissionsLens(request)
+           if (!permissions!!.watchEmployee)
+            return Response(Status.UNAUTHORIZED) 
+
+6. class ShowEquipmentHandler
+	1. private val permissionsLens: RequestContextLens<RolePermissions?>
+	2. val permissions = permissionsLens(request)
+           if (!permissions!!.watchEquipment)
+            return Response(Status.UNAUTHORIZED)
+
+7. class ShowEquipmentListHandler
+	1. private val permissionsLens: RequestContextLens<RolePermissions?>
+	2. val permissions = permissionsLens(request)
+           if (!permissions!!.watchEquipment)
+            return Response(Status.UNAUTHORIZED)
+
+8. Router.kt
+	1. "/login" bind Method.GET to handlerStorage.showLoginFormHandler,
+    	2. "/login" bind Method.POST to handlerStorage.authenticateUser,
+    	3. "/logout" bind Method.GET to LogOutUser(),
+
+9. InventorySystem.kt
+	1. val operationStorage = OperationStorage(storage, Path("settings.json"))
+
+    	2. val renderer = ContextAwarePebbleTemplates().hotReload("src/main/resources")
+    	3. val htmlView = ContextAwareViewRender(renderer, ContentType.TEXT_HTML)
+
+    	4. val contexts = RequestContexts()
+    	5. val currentEmployeeLens: RequestContextLens<Employee?> = RequestContextKey.optional(contexts, "employee")
+    	6. val permissionsLens: RequestContextLens<RolePermissions?> =
+        	RequestContextKey.required(contexts, "permissions")
+    	htmlView.associateContextLens("currentEmployee", currentEmployeeLens)
+    	htmlView.associateContextLens("rolePermissions", permissionsLens)
+
+    	7. val jwtTools = JwtTools(operationStorage.settings.salt, issuer = "ru.ac.uniyar.InventorySystem")
+    	8. val handlerStorage = HandlerStorage(
+        	operationStorage,
+        	permissionsLens,
+        	htmlView,
+        	jwtTools)
+	9. val authorizedApp = authenticationFilter(
+        	currentEmployeeLens,
+        	operationStorage.fetchEmployeeViaUserId,
+        	jwtTools
+    	   ).then(
+        	   authorizationFilter(
+            		currentEmployeeLens,
+            		permissionsLens,
+            		operationStorage.fetchPermissionsViaIdQuery
+        	    ).then(routes)
+    	   )
+
+    	10. val ap = routes(authorizedApp, staticFilesHandler)
+    	11. val app: HttpHandler = ServerFilters.InitialiseRequestContext(contexts)
+        	.then(ShowErrorMessageFilter(htmlView))
+        	.then(ap)
+
+10. data class Storage
+	1. val rolePermissionsRepository : RolePermissionsRepository
+	2. Пользователям добавить roleId = UUID.fromString(*место для UUID, должен полностью совпадать с UUID выдаваемой роли)
+	3. Пользователям добавить password
+	4. Добавить нужные роли:
+		val guest = RolePermissions(
+        		id = UUID.fromString("39173158-db6b-11ec-9d64-0242ac120002"),
+        		name = "Гость",
+        		watchEmployee = false,
+        		watchEquipment = false
+    		)
+    		val pol = RolePermissions(
+        		id = UUID.fromString("08fc459c-db6d-11ec-9d64-0242ac120002"),
+        		name = "Авторизованный пользователь",
+        		watchEquipment = true,
+        		watchEmployee = false
+    		)
+    		val admin = RolePermissions(
+        		id = UUID.fromString("6b3b4b90-db6d-11ec-9d64-0242ac120002"),
+        		name = "Администратор",
+        		watchEquipment = true,
+        		watchEmployee = true
+    		)
+	5. val rolePermissionsRepository = RolePermissionsRepository(
+        	listOf(
+            		guest,
+            		pol,
+            		admin
+        	)
+    	    )
+	6. return Storage(
+        	employeeRepository = employeeRepository,
+        	equipmentRepository = equipmentRepository,
+        	rolePermissionsRepository = rolePermissionsRepository
+    	   )
+		
+11. layout.peb
+	<ul class="menu">
+                <li class="menu-text">Инвентаризация</li>
+                {% if rolePermissions.watchEquipment %}
+                    <li><a href="/equipment">Оборудование</a></li>
+                {% endif %}
+                {% if rolePermissions.watchEmployee %}
+                    <li><a href="/employees">Сотрудники</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="top-bar">
+            <ul class="dropdown menu" data-dropdown-menu>
+                 {% if currentEmployee is not null %}
+                    <li>{{currentEmployee.name}}</li>
+                     <li>
+                        <a href="/employees/{{ currentEmployee.id }}">{{ currentEmployee.login }}</a>
+                        <ul class="vertical menu accordion-menu">
+                            <li><a href="/logout">Выйти</a></li>
+                        </ul>
+                    </li>
+                 {% else %}
+                    <li><a href="/login">Войти</a></li>
+                 {% endif %}
+            </ul>
+
+7) Заменить(Может оно и не надо, но по другому у меня не работает :)
+
+class ContextAwareViewRender(
+    private val templateRenderer: ContextAwareTemplateRenderer,
+    contentType: ContentType
+) {
+    private val baseBodyLensSpec = Body.string(contentType)
+    private val contexts = mutableMapOf<String, RequestContextLens<*>>()
+
+    fun associateContextLens(key: String, lens: RequestContextLens<*>) {
+        contexts[key] = lens
+    }
+
+    private fun extractContext(request: Request): Map<String, Any?> = contexts.mapValues { it.value(request) }
+
+    operator fun invoke(request: Request): BiDiBodyLens<ViewModel> {
+        return baseBodyLensSpec.map<ViewModel>(
+            {
+                throw UnsupportedOperationException("Cannot parse a ViewModel")
+            },
+            {
+                    viewModel: ViewModel ->
+                templateRenderer(extractContext(request), viewModel)
+            }
+        ).toLens()
+    }
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+

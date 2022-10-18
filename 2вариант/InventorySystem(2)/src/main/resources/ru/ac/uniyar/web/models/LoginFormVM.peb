@@ -1,0 +1,22 @@
+ {% extends "./layout.peb" %}
+
+ {% block title %}
+     Вход
+ {% endblock %}
+
+{% block content %}
+    <form method="POST">
+        <div class="grid-x grid-padding-x">
+            <div class="medium-6 cell">
+                <label><strong>Логин:</strong>
+                <input name="login" type="text" value="{{ model.form.fields["login"] | first }}"></label>
+            </div>
+            <div class="medium-6 cell">
+                <label><strong>Пароль:</strong>
+                <input name="password" type="password" value="{{ model.form.fields["password"] | first }}"></label>
+            </div>
+        </div>
+        <a href="/">Отмена</a>
+        <input type="submit" value="Войти" class="button">
+    </form>
+{% endblock %}

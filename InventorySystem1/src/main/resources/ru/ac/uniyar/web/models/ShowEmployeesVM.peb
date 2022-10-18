@@ -1,0 +1,43 @@
+{% extends "./layout.peb" %}
+
+{% block content %}
+
+<div class="gird-x grid-padding-x">
+    <div class="cell">
+        <h1>Список сотрудников</h1>
+
+        {% if model.employees is empty %}
+            <div class="callout warning">
+                Нет ни одного сотрудника в организации!
+            </div>
+        {% else %}
+            <table class="hover">
+                <thead>
+                <tr>
+                    <td>ФИО</td>
+                    <td>Телефон</td>
+                    <td>Информация</td>
+                </tr>
+                </thead>
+                <tbody>
+                {% for employee in model.employees%}
+                <tr>
+                    <td>
+                        {{ employee.name }}
+                    </td>
+                    <td>
+                        {{ employee.phone }}
+                    </td>
+                    <td>
+                        <a href="/employees/{{ employee.id }}">Больше</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+

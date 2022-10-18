@@ -1,0 +1,24 @@
+{% extends "./layout.peb" %}
+
+{% block content %}
+
+<div class="grid-x grid-padding-x">
+    <div class="cell">
+        <h1>Информация о работнике</h1>
+        <p>
+            <a href="/employees">Назад к списку</a>
+        </p>
+        <p>
+            Имя работника: {{ model.employee.name }}
+        </p>
+        <p>
+            Имя учётной записи: {{ model.employee.login }}
+        </p>
+        <p>
+            Телефон: {{ model.employee.phone }}
+        </p>
+    </div>
+</div>
+
+{% endblock %}
+

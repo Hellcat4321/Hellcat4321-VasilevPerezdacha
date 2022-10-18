@@ -1,0 +1,6 @@
+    {% extends "./layout.peb" %}
+    {% block content %}
+    <p><strong>Нельзя выполнить действие, нет прав</strong></p>
+    <p><strong>Войдите в систему чтобы просматривать страницу</strong></p>
+    <a href="/" class="button">Назад на основную страницу</a>
+    {% endblock %}
